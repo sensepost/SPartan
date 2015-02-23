@@ -1,0 +1,12 @@
+_vti_pvt/
+_vti_bin/
+_vti_log/
+_vti_cnf/
+_vti_bot/
+_vti_bin/_vti_adm/
+_vti_bin/_vti_aut/
+_vti_txt/
+_layouts/
+_catalogs/
+_forms/
+Pages/

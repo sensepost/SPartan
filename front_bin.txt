@@ -1,0 +1,10 @@
+_vti_inf.html
+_vti_bin/shtml.dll/_vti_rpc
+_vti_bin/owssvr.dll
+_vti_bin/_vti_adm/admin.dll
+_vti_bin/_vti_adm/admin.exe
+_vti_bin/_vti_aut/author.exe
+_vti_bin/_vti_aut/WS_FTP.log
+_vti_bin/_vti_aut/ws_ftp.log
+_vti_bin/shtml.exe/_vti_rpc
+_vti_bin/_vti_aut/author.dll
