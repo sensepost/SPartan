@@ -31,6 +31,7 @@ import re
 import threading
 import urllib2
 import bs4
+import string
 from threading import Lock
 from requests_ntlm import HttpNtlmAuth
 
@@ -53,6 +54,58 @@ YELLOW = "\033[00;33m{0}\033[00m"
 PURPLE = "\033[00;35m{0}\033[00m"
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
+
+def getUsersSOAPPrincipals(url, cookie):
+    #Uses SearchPrincipals in ﻿/_vti_bin/people.asmx to extract user info
+    path = '_vti_bin/people.asmx'
+    userList = []
+    headers = {"SOAPAction" : "http://schemas.microsoft.com/sharepoint/soap/SearchPrincipals", "Content-type" : "text/xml; charset=utf-8"}
+
+    for letter in string.lowercase:
+        data = """﻿<?xml version="1.0" encoding="utf-8"?>
+      <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+        <soap:Body>
+          <SearchPrincipals xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+            <searchText>%s</searchText>
+            <maxResults>100</maxResults>
+            <principalType>All</principalType>
+          </SearchPrincipals>
+        </soap:Body>
+      </soap:Envelope>""" % (letter)
+        thread = URLThread(None)
+        thread.start()
+        thread.join()
+        thread.sendData(url + '/' + path, data, headers)
+        resp = thread.resp
+        users = xmlSOAPUserParse(resp.content)
+        for u in users:
+            if u not in userList:
+                userList.append(u)
+
+    for u in userList:
+        for element in u:
+            print '[+] %s' % (element)
+            if 'accountname' in element:
+                accName = element.split(':')
+                writeUserToFile(accName[1])
+        print '\n'
+def writeUserToFile(accName):
+    fname = fileNamer(url)
+    if checkDirExists(fname):
+        f = open(fname + '/users.txt', 'a')
+        f.write(accName + '\n')
+        f.close()
+
+def xmlSOAPUserParse(xmlString):
+    #Parse soap xml for people.asmx
+    soap = bs4.BeautifulSoup(xmlString)
+    users = []
+    for principal in soap.find_all('principalinfo'):
+        user = []
+        for tag in principal:
+            user.append('%s:%s' % (tag.name, tag.string))
+        users.append(user)
+    return users
 
 def signal_handler(signal, frame):
     sys.exit(0)
@@ -529,23 +582,23 @@ class URLThread(threading.Thread):
         except requests.HTTPError, e:
             print e
 
-    def sendData(self, url, data):
+    def sendData(self, url, data, headers):
         global counter
         try:
             if authed:
                 if cookie is not None:
-                    self.resp = requests.get(url, cookies=cookie, data=data)
+                    self.resp = requests.post(url, cookies=cookie, data=data, headers=headers)
                 else:
-                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), data=data)
+                    self.resp = requests.post(url, auth=HttpNtlmAuth(username, password), data=data, headers=headers)
             else:
-                self.resp = requests.get(url, data=data)
+                self.resp = requests.post(url, data=data, headers=headers)
             respSize = len(self.resp.text)
 
             if self.resp is not None:
-                if self.resp.status_code == 200:
-                    out = "[+] [%s][%s][%sb] - %s - %s" % (counter, self.resp.status_code, respSize, url.strip(), data)
-                    self.printer(out, GREEN)
-                    foundURLs.append(url)
+                #if self.resp.status_code == 200:
+                 #   out = "[+] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
+                  #  self.printer(out, GREEN)
+                   # foundURLs.append(url)
                 if self.resp.status_code == 400:
                     out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
                     self.printer(out, RED)
@@ -630,6 +683,7 @@ if __name__ == "__main__":
     parser.add_argument('-k', dest='keyword', action='store', help="scrape identified pages for keywords (works well with crawl)")
     parser.add_argument('-s', dest='sharepoint', action='store_true', help="perform sharepoint scans")
     parser.add_argument('--sps', dest='sps', action='store_true', help="discover sharepoint SOAP services")
+    parser.add_argument('--users', dest='users', action='store_true', help="List users using people.asmx")
     parser.add_argument('-r', dest='rpc', action='store', help="(COMING SOON)execute a specified Frontpage RPC query")
     parser.add_argument('-t', dest='thread', action='store', help="set maximum amount of threads (10 default)")
     parser.add_argument('-p', dest='putable', action='store_true', help="(COMING SOON)find putable directories")
@@ -725,6 +779,10 @@ if __name__ == "__main__":
                     print "\n-----------------------------------------------------------------------------"
                     print "[+] Searching for SOAP services..."
                     soap_services(url)
+                if args.users:
+                    print "\n-----------------------------------------------------------------------------"
+                    print "[+] Listing user information from People.asmx"
+                    getUsersSOAPPrincipals(url, args.cookie)
             if args.crawl:
                 crawler(url)
             if args.keyword:
