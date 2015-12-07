@@ -345,7 +345,7 @@ def authenticate(url, userpass, cString):
             username = userpass.split(':')[0]
             password = userpass.split(':')[1]
             print '[+] Authenticating: %s %s' % (url, username)
-            response = requests.get(url, auth=HttpNtlmAuth(username, password))
+            response = requests.get(url, auth=HttpNtlmAuth(username, password), verify=False)
             if response.status_code == 200:
                 print '[+] Authenticated...Have fun!: %s' % (response.status_code)
                 authed = True
@@ -361,7 +361,7 @@ def authenticate(url, userpass, cString):
                 params = c.partition('=')
                 cookie.update({params[0]:params[2]})
             print '[+] Authenticating: %s' % (url)
-            response = requests.get(url, cookies=cookie)
+            response = requests.get(url, cookies=cookie, verify=False)
             if response.status_code == 200:
                 print '[+] Authenticated...Have fun!: %s' % (response.status_code)
                 authed = True
@@ -384,11 +384,11 @@ def crawler(url):
 
             if authed:
                 if cookie is not None:
-                    response = requests.get(qURL, cookies=cookie)
+                    response = requests.get(qURL, cookies=cookie, verify=False)
                 else:
-                    response = requests.get(qURL, auth=HttpNtlmAuth(username, password))
+                    response = requests.get(qURL, auth=HttpNtlmAuth(username, password), verify=False)
             else:
-                response = requests.get(qURL)
+                response = requests.get(qURL, verify=False)
             soup = bs4.BeautifulSoup(response.text)
             for link in soup.find_all('a'):
                 hLink = link.get('href')
@@ -418,7 +418,7 @@ def crawler(url):
 def keywordScanner(keyword):
     try:
         for url in foundURLs:
-                resp = requests.get(url)
+                resp = requests.get(url, verify=False)
                 if keyword in resp.text or keyword in url:
                     printer('[+] Found keyword %s in %s' % (keyword, url), GREEN)
     except Exception, e:
@@ -511,11 +511,11 @@ class URLThread(threading.Thread):
 
                 if authed:
                     if cookie is not None:
-                        fakeResp = requests.get(fakeUrl, cookies=cookie)
+                        fakeResp = requests.get(fakeUrl, cookies=cookie, verify=False)
                     else:
-                        fakeResp = requests.get(fakeUrl, auth=HttpNtlmAuth(username, password))
+                        fakeResp = requests.get(fakeUrl, auth=HttpNtlmAuth(username, password), verify=False)
                 else:
-                    fakeResp = requests.get(fakeUrl)
+                    fakeResp = requests.get(fakeUrl, verify=False)
 
                 fakeRespSize = len(fakeResp.text)
 
@@ -526,11 +526,11 @@ class URLThread(threading.Thread):
             #Do request with legit url
             if authed:
                 if cookie is not None:
-                    self.resp = requests.get(url, cookies=cookie)
+                    self.resp = requests.get(url, cookies=cookie, verify=False)
                 else:
-                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password))
+                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), verify=False)
             else:
-                self.resp = requests.get(url)
+                self.resp = requests.get(url, verify=False)
 
             respSize = len(self.resp.text)
 
@@ -574,11 +574,11 @@ class URLThread(threading.Thread):
         try:
             if authed:
                 if cookie is not None:
-                    self.resp = requests.post(url, cookies=cookie, data=data, headers=headers)
+                    self.resp = requests.post(url, cookies=cookie, data=data, headers=headers, verify=False)
                 else:
-                    self.resp = requests.post(url, auth=HttpNtlmAuth(username, password), data=data, headers=headers)
+                    self.resp = requests.post(url, auth=HttpNtlmAuth(username, password), data=data, headers=headers, verify=False)
             else:
-                self.resp = requests.post(url, data=data, headers=headers)
+                self.resp = requests.post(url, data=data, headers=headers, verify=False)
             respSize = len(self.resp.text)
 
             if self.resp is not None:
@@ -618,9 +618,9 @@ class URLThread(threading.Thread):
             
             if authed:
                 if cookie is not None:
-                    self.resp = requests.get(url, cookies=cookie, stream=True)
+                    self.resp = requests.get(url, cookies=cookie, stream=True, verify=False)
                 else:
-                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), stream=True)
+                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), stream=True, verify=False)
             else:
                 self.resp = requests.get(url, stream=True)
 
