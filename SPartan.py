@@ -55,40 +55,26 @@ PURPLE = "\033[00;35m{0}\033[00m"
 
 #----------------------------------------------------------------------------------------------------------------------------------------------
 
-def getUsersSOAPPrincipals(url, cookie):
-    #Uses SearchPrincipals in ﻿/_vti_bin/people.asmx to extract user info
-    path = '_vti_bin/people.asmx'
+
+def getUsers(url):
+    path = '_layouts/people.aspx?MembershipGroupId=0'
     userList = []
-    headers = {"SOAPAction" : "http://schemas.microsoft.com/sharepoint/soap/SearchPrincipals", "Content-type" : "text/xml; charset=utf-8"}
+    
+    thread = URLThread(url + '/' + stringCleaner(path))
+    thread.start()
+    thread.join()
 
-    for letter in string.lowercase:
-        data = """﻿<?xml version="1.0" encoding="utf-8"?>
-      <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-        <soap:Body>
-          <SearchPrincipals xmlns="http://schemas.microsoft.com/sharepoint/soap/">
-            <searchText>%s</searchText>
-            <maxResults>100</maxResults>
-            <principalType>All</principalType>
-          </SearchPrincipals>
-        </soap:Body>
-      </soap:Envelope>""" % (letter)
-        thread = URLThread(None)
-        thread.start()
-        thread.join()
-        thread.sendData(url + '/' + path, data, headers)
-        resp = thread.resp
-        users = xmlSOAPUserParse(resp.content)
-        for u in users:
-            if u not in userList:
-                userList.append(u)
+    response = thread.resp
+    if response is not None:
+        soup = bs4.BeautifulSoup(response.text)
+        for inputTag in soup.find_all('input'):
+            accountElement = inputTag.get('account')
+            if accountElement is not None:
+                if 'i:0#.f|' in accountElement or 'i:0#.w|' in accountElement:
+                    print accountElement.rsplit('|', 1)[1]
+                else:
+                    print accountElement
 
-    for u in userList:
-        for element in u:
-            print '[+] %s' % (element)
-            if 'accountname' in element:
-                accName = element.split(':')
-                writeUserToFile(accName[1])
-        print '\n'
 def writeUserToFile(accName):
     fname = fileNamer(url)
     if checkDirExists(fname):
@@ -361,7 +347,7 @@ def authenticate(url, userpass, cString):
             print '[+] Authenticating: %s %s' % (url, username)
             response = requests.get(url, auth=HttpNtlmAuth(username, password))
             if response.status_code == 200:
-                print '[+] Authenticated! Give them nothing...but take from them everything!: %s' % (response.status_code)
+                print '[+] Authenticated...Have fun!: %s' % (response.status_code)
                 authed = True
             else:
                 print '[-] Failed! Have the gods no mercy?: %s' % (response.status_code)
@@ -377,7 +363,7 @@ def authenticate(url, userpass, cString):
             print '[+] Authenticating: %s' % (url)
             response = requests.get(url, cookies=cookie)
             if response.status_code == 200:
-                print '[+] Authenticated! Give them nothing...but take from them everything!: %s' % (response.status_code)
+                print '[+] Authenticated...Have fun!: %s' % (response.status_code)
                 authed = True
             else:
                 print '[-] Failed! Have the gods no mercy?: %s' % (response.status_code)
@@ -440,6 +426,7 @@ def keywordScanner(keyword):
 
 def fileNamer(url):
     fileName = url.strip('https://').strip('http://').strip('/')
+    fileName = fileName.replace(":","")
     if '/' in fileName:
         return fileName.split('/')[0]
     return fileName
@@ -518,7 +505,7 @@ class URLThread(threading.Thread):
                 #Manage Friendly 404s
                 #Checks whether dummy URL and actual URL produce same size response
                 #Also uses a size error bound used in determining distance between dummy URL and actual URL and error message recognition
-                errorBound = 100
+                errorBound = 50
                 fakeRespSize = 0
                 respSize = 0
 
@@ -627,8 +614,8 @@ class URLThread(threading.Thread):
         fileList = url.split('/')
         fName = fileList.pop()
 
-        if 'stp' in extension or 'xlsx' in extension or 'xls' in extension or 'doc' in extension or 'docx' in extension or 'pdf' in extension or 'xml' in extension or 'config' in extension or 'conf' in extension or 'aspx' in extension or 'asp' in extension or 'webpart' in extension or 'csv' in extension:
-
+        if 'txt' in extension or 'stp' in extension or 'xlsx' in extension or 'xls' in extension or 'doc' in extension or 'docx' in extension or 'pdf' in extension or 'xml' in extension or 'config' in extension or 'conf' in extension or 'aspx' in extension or 'asp' in extension or 'webpart' in extension or 'csv' in extension:
+            
             if authed:
                 if cookie is not None:
                     self.resp = requests.get(url, cookies=cookie, stream=True)
@@ -637,17 +624,26 @@ class URLThread(threading.Thread):
             else:
                 self.resp = requests.get(url, stream=True)
 
-            if '<%' not in self.resp.text and '%>' not in self.resp.text:
-                #Interpreted asp and aspx must be ignored
-                return
-            else:
-                #r = requests.get(url, stream=True)
-                with open(fileName + '/' + fName, 'wb') as f:
-                    for chunk in self.resp.iter_content(chunk_size=1024):
-                        if chunk: # filter out keep-alive new chunks
-                            f.write(chunk)
-                            f.flush()
+            if 'asp' in extension or 'aspx' in extension:
+                if '<%' not in self.resp.text and '%>' not in self.resp.text:
+                    #Interpreted asp and aspx must be ignored
+                    out = "[+] Downloading: %s" % (fName)
+                    self.printer(out, GREEN)
 
+                    with open(fileName + '/' + fName, 'wb') as f:
+                        for chunk in self.resp.iter_content(chunk_size=1024):
+                            if chunk: # filter out keep-alive new chunks
+                                f.write(chunk)
+                                f.flush()
+                    
+            out = "[+] Downloading: %s" % (fName)
+            self.printer(out, GREEN)
+            with open(fileName + '/' + fName, 'wb') as f:
+                for chunk in self.resp.iter_content(chunk_size=1024):
+                    if chunk: # filter out keep-alive new chunks
+                        f.write(chunk)
+                        f.flush()
+            f.close()
     def printer(self, text, colour):
         with self.lock:
             sys.stdout.write(colour.format(text) + '\n')
@@ -683,7 +679,7 @@ if __name__ == "__main__":
     parser.add_argument('-k', dest='keyword', action='store', help="scrape identified pages for keywords (works well with crawl)")
     parser.add_argument('-s', dest='sharepoint', action='store_true', help="perform sharepoint scans")
     parser.add_argument('--sps', dest='sps', action='store_true', help="discover sharepoint SOAP services")
-    parser.add_argument('--users', dest='users', action='store_true', help="List users using people.asmx")
+    parser.add_argument('--users', dest='users', action='store_true', help="List users using Search Principals")
     parser.add_argument('-r', dest='rpc', action='store', help="(COMING SOON)execute a specified Frontpage RPC query")
     parser.add_argument('-t', dest='thread', action='store', help="set maximum amount of threads (10 default)")
     parser.add_argument('-p', dest='putable', action='store_true', help="(COMING SOON)find putable directories")
@@ -711,13 +707,7 @@ if __name__ == "__main__":
                 downloadFiles = True
             else:
                 downloadFiles = False
-
-            global authed
-            if args.login:
-                authenticate(args.url, args.login, None)
-            else:
-                authed = False
-
+            
             global cookie
             if args.cookie:
                 cString = args.cookie
@@ -725,21 +715,27 @@ if __name__ == "__main__":
             else:
                 cookie = None
 
+            global authed  
+            if args.login:
+                authenticate(args.url, args.login, None)
+            else:
+                authed = False
+
             url = args.url.strip('/')
             fileName = fileNamer(url)
-
+            
             if not checkDirExists(fileName):
                 os.makedirs(fileName)
 
             if checkFileExists(fileName):
-                print "King Leonidas says a file named %s already exists. Do you want to restore this session? [y/n]" % fileName
+                print "A file named %s already exists. Do you want to restore this session? [y/n]" % fileName
                 choice = raw_input().lower()
                 if choice != 'y' and choice != 'n':
-                    printer('THIS IS MADNESS!', RED)
+                    printer('Bad choice!', RED)
                     sys.exit(0)
                 if choice == 'y':
                     print "\n-----------------------------------------------------------------------------"
-                    print "[+] Preparing for glory..."
+                    print "[+] Loading..."
                     restoreState(fileName)
             if choice == 'n' or not checkFileExists(fileName):
                 #Inject the base URL
@@ -781,8 +777,8 @@ if __name__ == "__main__":
                     soap_services(url)
                 if args.users:
                     print "\n-----------------------------------------------------------------------------"
-                    print "[+] Listing user information from People.asmx"
-                    getUsersSOAPPrincipals(url, args.cookie)
+                    print "[+] Listing user information..."
+                    getUsers(url)
             if args.crawl:
                 crawler(url)
             if args.keyword:
