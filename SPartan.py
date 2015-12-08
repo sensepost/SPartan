@@ -24,16 +24,15 @@ Version: 1.0 (20-11-2014)
 """
 import argparse
 import requests
-import signal
 import sys
 import os
-import re
 import threading
-import urllib2
 import bs4
-import string
+import warnings
 from threading import Lock
 from requests_ntlm import HttpNtlmAuth
+
+warnings.filterwarnings("ignore")
 
 #TODO
 #Frontpage RPCs
@@ -59,7 +58,7 @@ PURPLE = "\033[00;35m{0}\033[00m"
 def getUsers(url):
     path = '_layouts/people.aspx?MembershipGroupId=0'
     userList = []
-    
+
     thread = URLThread(url + '/' + stringCleaner(path))
     thread.start()
     thread.join()
@@ -345,7 +344,7 @@ def authenticate(url, userpass, cString):
             username = userpass.split(':')[0]
             password = userpass.split(':')[1]
             print '[+] Authenticating: %s %s' % (url, username)
-            response = requests.get(url, auth=HttpNtlmAuth(username, password), verify=False)
+            response = requests.get(url, auth=HttpNtlmAuth(username, password), verify=ignore_ssl)
             if response.status_code == 200:
                 print '[+] Authenticated...Have fun!: %s' % (response.status_code)
                 authed = True
@@ -361,7 +360,7 @@ def authenticate(url, userpass, cString):
                 params = c.partition('=')
                 cookie.update({params[0]:params[2]})
             print '[+] Authenticating: %s' % (url)
-            response = requests.get(url, cookies=cookie, verify=False)
+            response = requests.get(url, cookies=cookie, verify=ignore_ssl)
             if response.status_code == 200:
                 print '[+] Authenticated...Have fun!: %s' % (response.status_code)
                 authed = True
@@ -384,11 +383,11 @@ def crawler(url):
 
             if authed:
                 if cookie is not None:
-                    response = requests.get(qURL, cookies=cookie, verify=False)
+                    response = requests.get(qURL, cookies=cookie, verify=ignore_ssl)
                 else:
-                    response = requests.get(qURL, auth=HttpNtlmAuth(username, password), verify=False)
+                    response = requests.get(qURL, auth=HttpNtlmAuth(username, password), verify=ignore_ssl)
             else:
-                response = requests.get(qURL, verify=False)
+                response = requests.get(qURL, verify=ignore_ssl)
             soup = bs4.BeautifulSoup(response.text)
             for link in soup.find_all('a'):
                 hLink = link.get('href')
@@ -418,7 +417,7 @@ def crawler(url):
 def keywordScanner(keyword):
     try:
         for url in foundURLs:
-                resp = requests.get(url, verify=False)
+                resp = requests.get(url, verify=ignore_ssl)
                 if keyword in resp.text or keyword in url:
                     printer('[+] Found keyword %s in %s' % (keyword, url), GREEN)
     except Exception, e:
@@ -511,11 +510,11 @@ class URLThread(threading.Thread):
 
                 if authed:
                     if cookie is not None:
-                        fakeResp = requests.get(fakeUrl, cookies=cookie, verify=False)
+                        fakeResp = requests.get(fakeUrl, cookies=cookie, verify=ignore_ssl)
                     else:
-                        fakeResp = requests.get(fakeUrl, auth=HttpNtlmAuth(username, password), verify=False)
+                        fakeResp = requests.get(fakeUrl, auth=HttpNtlmAuth(username, password), verify=ignore_ssl)
                 else:
-                    fakeResp = requests.get(fakeUrl, verify=False)
+                    fakeResp = requests.get(fakeUrl, verify=ignore_ssl)
 
                 fakeRespSize = len(fakeResp.text)
 
@@ -526,16 +525,16 @@ class URLThread(threading.Thread):
             #Do request with legit url
             if authed:
                 if cookie is not None:
-                    self.resp = requests.get(url, cookies=cookie, verify=False)
+                    self.resp = requests.get(url, cookies=cookie, verify=ignore_ssl)
                 else:
-                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), verify=False)
+                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), verify=ignore_ssl)
             else:
-                self.resp = requests.get(url, verify=False)
+                self.resp = requests.get(url, verify=ignore_ssl)
 
             respSize = len(self.resp.text)
 
             #Determine response type and check whether it's a Friendly 404
-            if (self.resp.status_code == 200) and (fakeResp is not None) and (fakeRespSize == respSize or (abs(respSize - fakeRespSize) < errorBound) or ERROR1 in self.resp.text or ERROR2 in self.resp.text):
+            if (verbose == True) and (self.resp.status_code == 200) and (fakeResp is not None) and (fakeRespSize == respSize or (abs(respSize - fakeRespSize) < errorBound) or ERROR1 in self.resp.text or ERROR2 in self.resp.text):
                 #This is a Friendly 404s
                 out = "[-] [%s][%s][%sb] - %s" % (counter, 'Friendly 404', respSize, url.strip())
                 self.printer(out, RED)
@@ -548,21 +547,22 @@ class URLThread(threading.Thread):
                     foundURLs.append(url)
                     if downloadFiles:
                         self.fileDownloader(url)
-                if self.resp.status_code == 400:
-                    out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
-                    self.printer(out, RED)
-                if self.resp.status_code == 404:
-                    out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
-                    self.printer(out, RED)
-                if self.resp.status_code == 401 or self.resp.status_code == 403:
-                    out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
-                    self.printer(out, BLUE)
-                if self.resp.status_code == 302:
-                    out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
-                    self.printer(out, YELLOW)
-                if self.resp.status_code == 500:
-                    out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
-                    self.printer(out, PURPLE)
+                if verbose == True:
+                    if self.resp.status_code == 400:
+                        out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
+                        self.printer(out, RED)
+                    if self.resp.status_code == 404:
+                        out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
+                        self.printer(out, RED)
+                    if self.resp.status_code == 401 or self.resp.status_code == 403:
+                        out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
+                        self.printer(out, BLUE)
+                    if self.resp.status_code == 302:
+                        out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
+                        self.printer(out, YELLOW)
+                    if self.resp.status_code == 500:
+                        out = "[-] [%s][%s][%sb] - %s" % (counter, self.resp.status_code, respSize, url.strip())
+                        self.printer(out, PURPLE)
                 counter = counter + 1
 
 
@@ -574,11 +574,11 @@ class URLThread(threading.Thread):
         try:
             if authed:
                 if cookie is not None:
-                    self.resp = requests.post(url, cookies=cookie, data=data, headers=headers, verify=False)
+                    self.resp = requests.post(url, cookies=cookie, data=data, headers=headers, verify=ignore_ssl)
                 else:
-                    self.resp = requests.post(url, auth=HttpNtlmAuth(username, password), data=data, headers=headers, verify=False)
+                    self.resp = requests.post(url, auth=HttpNtlmAuth(username, password), data=data, headers=headers, verify=ignore_ssl)
             else:
-                self.resp = requests.post(url, data=data, headers=headers, verify=False)
+                self.resp = requests.post(url, data=data, headers=headers, verify=ignore_ssl)
             respSize = len(self.resp.text)
 
             if self.resp is not None:
@@ -615,12 +615,12 @@ class URLThread(threading.Thread):
         fName = fileList.pop()
 
         if 'txt' in extension or 'stp' in extension or 'xlsx' in extension or 'xls' in extension or 'doc' in extension or 'docx' in extension or 'pdf' in extension or 'xml' in extension or 'config' in extension or 'conf' in extension or 'aspx' in extension or 'asp' in extension or 'webpart' in extension or 'csv' in extension:
-            
+
             if authed:
                 if cookie is not None:
-                    self.resp = requests.get(url, cookies=cookie, stream=True, verify=False)
+                    self.resp = requests.get(url, cookies=cookie, stream=True, verify=ignore_ssl)
                 else:
-                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), stream=True, verify=False)
+                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), stream=True, verify=ignore_ssl)
             else:
                 self.resp = requests.get(url, stream=True)
 
@@ -635,7 +635,7 @@ class URLThread(threading.Thread):
                             if chunk: # filter out keep-alive new chunks
                                 f.write(chunk)
                                 f.flush()
-                    
+
             out = "[+] Downloading: %s" % (fName)
             self.printer(out, GREEN)
             with open(fileName + '/' + fName, 'wb') as f:
@@ -654,15 +654,15 @@ class URLThread(threading.Thread):
 def banner():
     red = "\033[00;31m{0}\033[00m"
     banner = """
-   ██████ ██▓███  ▄▄▄      ██▀███ ▄▄▄█████▓▄▄▄      ███▄    █ 
- ▒██    ▒▓██░  ██▒████▄   ▓██ ▒ ██▓  ██▒ ▓▒████▄    ██ ▀█   █ 
+   ██████ ██▓███  ▄▄▄      ██▀███ ▄▄▄█████▓▄▄▄      ███▄    █
+ ▒██    ▒▓██░  ██▒████▄   ▓██ ▒ ██▓  ██▒ ▓▒████▄    ██ ▀█   █
  ░ ▓██▄  ▓██░ ██▓▒██  ▀█▄ ▓██ ░▄█ ▒ ▓██░ ▒▒██  ▀█▄ ▓██  ▀█ ██▒
    ▒   ██▒██▄█▓▒ ░██▄▄▄▄██▒██▀▀█▄ ░ ▓██▓ ░░██▄▄▄▄██▓██▒  ▐▌██▒
  ▒██████▒▒██▒ ░  ░▓█   ▓██░██▓ ▒██▒ ▒██▒ ░ ▓█   ▓██▒██░   ▓██░
- ▒ ▒▓▒ ▒ ▒▓▒░ ░  ░▒▒   ▓▒█░ ▒▓ ░▒▓░ ▒ ░░   ▒▒   ▓▒█░ ▒░   ▒ ▒ 
+ ▒ ▒▓▒ ▒ ▒▓▒░ ░  ░▒▒   ▓▒█░ ▒▓ ░▒▓░ ▒ ░░   ▒▒   ▓▒█░ ▒░   ▒ ▒
  ░ ░▒  ░ ░▒ ░      ▒   ▒▒ ░ ░▒ ░ ▒░   ░     ▒   ▒▒ ░ ░░   ░ ▒░
- ░  ░  ░ ░░        ░   ▒    ░░   ░  ░       ░   ▒     ░   ░ ░ 
-       ░               ░  ░  ░                  ░  ░        ░ 
+ ░  ░  ░ ░░        ░   ▒    ░░   ░  ░       ░   ▒     ░   ░ ░
+       ░               ░  ░  ░                  ░  ░        ░
                Sharepoint & Frontpage Scanner
 """
     print red.format(banner)
@@ -687,6 +687,8 @@ if __name__ == "__main__":
     parser.add_argument('-d', dest='download', action='store_true', help="download pdf, doc, docx, txt, config, xml, xls, xlsx, webpart, config, conf, stp, csv and asp/aspx(uninterpreted)")
     parser.add_argument('-l', dest='login', action='store', help="provide credentials for authentication to Sharepoint",
                         metavar=('domain\user:password'))
+    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Render verbose output. By default SPartan will only render found resources.")
+    parser.add_argument('-i', '--ignore-ssl-verification', dest='ignore_ssl', action='store_false', help="Don't attempt to verify SSL certificates as valid before making a request. This is defaulted to false.")
     args = parser.parse_args()
 
     try:
@@ -707,7 +709,7 @@ if __name__ == "__main__":
                 downloadFiles = True
             else:
                 downloadFiles = False
-            
+
             global cookie
             if args.cookie:
                 cString = args.cookie
@@ -715,15 +717,28 @@ if __name__ == "__main__":
             else:
                 cookie = None
 
-            global authed  
+            global authed
             if args.login:
                 authenticate(args.url, args.login, None)
             else:
                 authed = False
 
+            global verbose
+            verbose = False
+            if args.verbose:
+                verbose = True
+                print 'Verbosity is set to HIGH. Spartan will print all resources found.'
+            else:
+                print 'Verbosity is set to LOW. SPartan will only print available resources. Use the -v flag to print all other resources found.'
+
+            global ignore_ssl
+            ignore_ssl = False
+            if args.ignore_ssl:
+                ignore_ssl = True
+
             url = args.url.strip('/')
             fileName = fileNamer(url)
-            
+
             if not checkDirExists(fileName):
                 os.makedirs(fileName)
 
