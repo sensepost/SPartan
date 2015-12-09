@@ -4,8 +4,13 @@ by Keiran Dennie
 
 Requirements
 -------------
-requests_ntlm: pip install requests_ntlm
-beautifulsoupt4: pip install python-beautifulsoup4
+requests_ntlm:
+
+pip install requests_ntlm
+
+beautifulsoup4:
+
+pip install python-beautifulsoup4
 
 Overview
 -------
