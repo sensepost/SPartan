@@ -9,17 +9,17 @@ beautifulsoupt4: pip install python-beautifulsoup4
 
 Overview
 -------
-SPartan is a Frontpage and Sharepoint eviscerator, great for mutilating Sharepoint sites.
+SPartan is a Frontpage and Sharepoint fingerprinting and attack tool.
 Features:
 - Sharepoint and Frontpage fingerprinting
-- Manages Friendly 404s
+- Management of Friendly 404s
 - Default Sharepoint and Frontpage file and folder enumeration
-- Identify PUTable directories
-- Download identified files, including detection of uninterpreted ASP and ASPX
+- Active Directory account enumeration
+- Download interesting files and documents, including detection of uninterpreted ASP and ASPX
 - Search for keywords in identified pages
 - Saves state from previous scans
 - Site crawling
-- Accepts NTLM creds for authenticated scans
+- Accepts NTLM creds and session cookies for authenticated scans
 
 
 License
