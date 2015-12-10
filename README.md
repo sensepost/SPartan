@@ -6,7 +6,7 @@ Requirements
 -------------
 The requests_ntlm and beautifulsoup4 libraries are required. Use the following command to install these with pip:
 
-pip install requests_ntlm python-beautifulsoup4
+pip install -r requirements.txt 
 
 Overview
 -------
