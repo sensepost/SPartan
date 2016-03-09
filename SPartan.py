@@ -14,7 +14,7 @@ Features:
 - Accepts NTLM creds for authenticated scans
 
 
-Prerequisites are:
+Prerequisite# are:
 + requests_ntlm
 + beautifulsoup4
 
@@ -22,15 +22,10 @@ Author: Special K
 Version: 1.0 (20-11-2014)
 
 """
-import argparse
-import requests
-import sys
-import os
-import threading
-import bs4
-import warnings
+import argparse,requests,sys,os,threading,bs4,warnings,random
 from threading import Lock
 from requests_ntlm import HttpNtlmAuth
+
 
 warnings.filterwarnings("ignore")
 
@@ -52,6 +47,17 @@ CYAN = "\033[00;36m{0}\033[00m"
 YELLOW = "\033[00;33m{0}\033[00m"
 PURPLE = "\033[00;35m{0}\033[00m"
 
+agents = ['Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.1.3) Gecko/20090913 Firefox/3.5.3'
+'Mozilla/5.0 (Windows; U; Windows NT 6.1; en; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3 (.NET CLR 3.5.30729)',
+'Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US; rv:1.9.1.3) Gecko/20090824 Firefox/3.5.3 (.NET CLR 3.5.30729)',
+'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.1) Gecko/20090718 Firefox/3.5.1',
+'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/532.1 (KHTML, like Gecko) ChroMe/4.0.219.6 Safari/532.1',
+'Mozilla/4.0 (coMpatible; MSIE 8.0; Windows NT 6.1; WOW64; Trident/4.0; SLCC2; .NET CLR 2.0.50727; InfoPath.2)',
+'Mozilla/4.0 (coMpatible; MSIE 8.0; Windows NT 6.0; Trident/4.0; SLCC1; .NET CLR 2.0.50727; .NET CLR 1.1.4322; .NET CLR 3.5.30729; .NET CLR 3.0.30729)',
+'Mozilla/4.0 (coMpatible; MSIE 8.0; Windows NT 5.2; Win64; x64; Trident/4.0)',
+'Mozilla/4.0 (coMpatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; SV1; .NET CLR 2.0.50727; InfoPath.2)', 
+'Mozilla/5.0 (Windows; U; MSIE 7.0; Windows NT 6.0; en-US)',
+'Mozilla/4.0 (coMpatible; MSIE 6.1; Windows XP)']
 #----------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -285,19 +291,20 @@ def soap_services(url):
 
 def getVerbs(u):
     url = u.strip()
+    headers = {'user-agent': random.choice(agents).strip(),}
     try:
         verbs = []
-        if requests.get(url).status_code == 200:
+        if requests.get(url,headers=headers).status_code == 200:
             verbs.append('GET')
-        if requests.post(url, 'test').status_code == 200:
+        if requests.post(url, 'test',headers=headers).status_code == 200:
             verbs.append('POST')
-        if requests.head(url).status_code == 200:
+        if requests.head(url,headers=headers).status_code == 200:
             verbs.append('HEAD')
-        if requests.delete(url).status_code == 200:
+        if requests.delete(url,headers=headers).status_code == 200:
             verbs.append('DELETE')
-        if requests.put(url, 'test').status_code == 200:
+        if requests.put(url, 'test',headers=headers).status_code == 200:
             verbs.append('PUT')
-        if requests.options(url).status_code == 200:
+        if requests.options(url,headers=headers).status_code == 200:
             verbs.append('OPTIONS')
 
         return verbs
@@ -308,6 +315,7 @@ def getVerbs(u):
 
 def findPuttable():
     #Find directories which are puttable
+    headers = {'user-agent': random.choice(agents).strip(),}
     paths = []
     try:
         for url in foundURLs:
@@ -320,9 +328,9 @@ def findPuttable():
         for path in paths:
             resp = None
             if authed:
-                resp = requests.options(path, auth=HttpNtlmAuth(username, password))
+                resp = requests.options(path, auth=HttpNtlmAuth(username, password),headers=headers)
             else:
-                resp = requests.options(path)
+                resp = requests.options(path,headers=headers)
 
             if resp is not None and resp.status_code == 200:
                 if 'allow' in resp.headers:
@@ -333,6 +341,7 @@ def findPuttable():
 
 
 def authenticate(url, userpass, cString):
+    headers = {'user-agent': random.choice(agents).strip(),}
     try:
         global username
         global password
@@ -344,7 +353,7 @@ def authenticate(url, userpass, cString):
             username = userpass.split(':')[0]
             password = userpass.split(':')[1]
             print '[+] Authenticating: %s %s' % (url, username)
-            response = requests.get(url, auth=HttpNtlmAuth(username, password), verify=ignore_ssl)
+            response = requests.get(url, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers)
             if response.status_code == 200:
                 print '[+] Authenticated...Have fun!: %s' % (response.status_code)
                 authed = True
@@ -360,7 +369,7 @@ def authenticate(url, userpass, cString):
                 params = c.partition('=')
                 cookie.update({params[0]:params[2]})
             print '[+] Authenticating: %s' % (url)
-            response = requests.get(url, cookies=cookie, verify=ignore_ssl)
+            response = requests.get(url, cookies=cookie, verify=ignore_ssl,headers=headers)
             if response.status_code == 200:
                 print '[+] Authenticated...Have fun!: %s' % (response.status_code)
                 authed = True
@@ -377,17 +386,18 @@ def crawler(url):
     queue = foundURLs[:] #clone foundURLs. queue used for processing URLs and foundURLs used to prevent rescans
     urlList = url.split('/')
     baseURL = '/'.join(urlList[:3])
+    headers = {'user-agent': random.choice(agents).strip(),}
     try:
         while len(queue) > 0:
             qURL = queue.pop(0)
 
             if authed:
                 if cookie is not None:
-                    response = requests.get(qURL, cookies=cookie, verify=ignore_ssl)
+                    response = requests.get(qURL, cookies=cookie, verify=ignore_ssl,headers=headers)
                 else:
-                    response = requests.get(qURL, auth=HttpNtlmAuth(username, password), verify=ignore_ssl)
+                    response = requests.get(qURL, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers)
             else:
-                response = requests.get(qURL, verify=ignore_ssl)
+                response = requests.get(qURL, verify=ignore_ssl,headers=headers)
             soup = bs4.BeautifulSoup(response.text)
             for link in soup.find_all('a'):
                 hLink = link.get('href')
@@ -415,9 +425,10 @@ def crawler(url):
 
 #Keyword scanner
 def keywordScanner(keyword):
+    headers = {'user-agent': random.choice(agents).strip(),}
     try:
         for url in foundURLs:
-                resp = requests.get(url, verify=ignore_ssl)
+                resp = requests.get(url, verify=ignore_ssl,headers=headers)
                 if keyword in resp.text or keyword in url:
                     printer('[+] Found keyword %s in %s' % (keyword, url), GREEN)
     except Exception, e:
@@ -491,6 +502,7 @@ class URLThread(threading.Thread):
         global counter
         ERROR1 = 'An error occurred'
         ERROR2 = 'Correlation ID'
+        headers = {'user-agent': random.choice(agents).strip(),}
         try:
             #resp = None
             #Do a request with a bullshit url
@@ -510,11 +522,11 @@ class URLThread(threading.Thread):
 
                 if authed:
                     if cookie is not None:
-                        fakeResp = requests.get(fakeUrl, cookies=cookie, verify=ignore_ssl)
+                        fakeResp = requests.get(fakeUrl, cookies=cookie, verify=ignore_ssl,headers=headers)
                     else:
-                        fakeResp = requests.get(fakeUrl, auth=HttpNtlmAuth(username, password), verify=ignore_ssl)
+                        fakeResp = requests.get(fakeUrl, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers)
                 else:
-                    fakeResp = requests.get(fakeUrl, verify=ignore_ssl)
+                    fakeResp = requests.get(fakeUrl, verify=ignore_ssl,headers=headers)
 
                 fakeRespSize = len(fakeResp.text)
 
@@ -525,11 +537,11 @@ class URLThread(threading.Thread):
             #Do request with legit url
             if authed:
                 if cookie is not None:
-                    self.resp = requests.get(url, cookies=cookie, verify=ignore_ssl)
+                    self.resp = requests.get(url, cookies=cookie, verify=ignore_ssl,headers=headers)
                 else:
-                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), verify=ignore_ssl)
+                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers)
             else:
-                self.resp = requests.get(url, verify=ignore_ssl)
+                self.resp = requests.get(url, verify=ignore_ssl,headers=headers)
 
             respSize = len(self.resp.text)
 
@@ -613,16 +625,16 @@ class URLThread(threading.Thread):
         extension = extList.pop()
         fileList = url.split('/')
         fName = fileList.pop()
-
+        headers = {'user-agent': random.choice(agents).strip(),}
         if 'txt' in extension or 'stp' in extension or 'xlsx' in extension or 'xls' in extension or 'doc' in extension or 'docx' in extension or 'pdf' in extension or 'xml' in extension or 'config' in extension or 'conf' in extension or 'aspx' in extension or 'asp' in extension or 'webpart' in extension or 'csv' in extension:
 
             if authed:
                 if cookie is not None:
-                    self.resp = requests.get(url, cookies=cookie, stream=True, verify=ignore_ssl)
+                    self.resp = requests.get(url, cookies=cookie, stream=True, verify=ignore_ssl,headers=headers)
                 else:
-                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), stream=True, verify=ignore_ssl)
+                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), stream=True, verify=ignore_ssl,headers=headers)
             else:
-                self.resp = requests.get(url, stream=True)
+                self.resp = requests.get(url, stream=True,headers=headers)
 
             if 'asp' in extension or 'aspx' in extension:
                 if '<%' not in self.resp.text and '%>' not in self.resp.text:
