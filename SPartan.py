@@ -630,11 +630,11 @@ class URLThread(threading.Thread):
 
             if authed:
                 if cookie is not None:
-                    self.resp = requests.get(url, cookies=cookie, stream=True, verify=ignore_ssl,headers=headers)
+                    self.resp = requests.get(url, cookies=cookie, stream=True, verify=ignore_ssl, headers=headers)
                 else:
-                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), stream=True, verify=ignore_ssl,headers=headers)
+                    self.resp = requests.get(url, auth=HttpNtlmAuth(username, password), stream=True, verify=ignore_ssl, headers=headers)
             else:
-                self.resp = requests.get(url, stream=True,headers=headers)
+                self.resp = requests.get(url, stream=True, verify=ignore_ssl, headers=headers)
 
             if 'asp' in extension or 'aspx' in extension:
                 if '<%' not in self.resp.text and '%>' not in self.resp.text:
