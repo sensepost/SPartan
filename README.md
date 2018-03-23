@@ -30,21 +30,21 @@ Some information needed for SPartan Usage:
  python SPartan.py -u http://127.0.0.1 -f -c 
  *Note: You need to add 'http(s)://' to the URL*
 
-* -u: "host URL to scan including HTTP/HTTPS"
-* -c: "crawl the site for links (CTRL-C to stop crawling)
-* -f: "perform frontpage scans"
-* -k: "scrape identified pages for keywords (works well with crawl)
-* -s: "perform sharepoint scans"
-* --sps: "discover sharepoint SOAP services"
-* --users: List users using Search Principals"
-* -r: "(COMING SOON)execute a specified Frontpage RPC query"
-* -t: "set maximum amount of threads (10 default)"
-* -p: "(COMING SOON)find putable directories")
-* --cookie: "use a cookie for authenticated scans"
-* -d: "download pdf, doc, docx, txt, config, xml, xls, xlsx, webpart, config, conf, stp, csv and asp/aspx(uninterpreted)"
-* -l: "provide credentials for authentication to Sharepoint" e.g., domain\user:password
-* -v: "Render verbose output. By default SPartan will only render found resources."
-* -i: "Don't attempt to verify SSL
+* -u: host URL to scan including HTTP/HTTPS
+* -c: crawl the site for links (CTRL-C to stop crawling)
+* -f: perform frontpage scans
+* -k: scrape identified pages for keywords (works well with crawl)
+* -s: perform sharepoint scans
+* --sps: discover sharepoint SOAP services
+* --users: List users using Search Principals
+* -r: (COMING SOON)execute a specified Frontpage RPC query
+* -t: set maximum amount of threads (10 default)
+* -p: (COMING SOON)find putable directories)
+* --cookie: "use a cookie for authenticated scans
+* -d: download pdf, doc, docx, txt, config, xml, xls, xlsx, webpart, config, conf, stp, csv and asp/aspx(uninterpreted)
+* -l: provide credentials for authentication to Sharepoint e.g., domain\user:password
+* -v: Render verbose output. By default SPartan will only render found resources.
+* -i: Don't attempt to verify SSL
 
 
 License
