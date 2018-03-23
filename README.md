@@ -27,7 +27,8 @@ Usage
 
 Some information needed for SPartan Usage:
 
- python SPartan.py -u http://127.0.0.1 -f -c *Note: You need to add 'http(s)://' to the URL*
+ python SPartan.py -u http://127.0.0.1 -f -c 
+ *Note: You need to add 'http(s)://' to the URL*
 
 * -u: "host URL to scan including HTTP/HTTPS"
 * -c: "crawl the site for links (CTRL-C to stop crawling)
