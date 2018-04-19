@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 SPartan is a Frontpage and Sharepoint eviscerator, great for mutilating Sharepoint sites.
