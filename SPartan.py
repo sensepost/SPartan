@@ -703,6 +703,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--ignore-ssl-verification', dest='ignore_ssl', action='store_false', help="Don't attempt to verify SSL certificates as valid before making a request. This is defaulted to false.")
     args = parser.parse_args()
 
+    authed = False
     try:
         if args.url:
             choice = 'n'
