@@ -519,7 +519,6 @@ class URLThread(threading.Thread):
                 errorBound = 50
                 fakeRespSize = 0
                 respSize = 0
-
                 if authed:
                     if cookie is not None:
                         fakeResp = requests.get(fakeUrl, cookies=cookie, verify=ignore_ssl,headers=headers)
@@ -730,6 +729,11 @@ if __name__ == "__main__":
             else:
                 cookie = None
 
+            global ignore_ssl
+            ignore_ssl = False
+            if args.ignore_ssl:
+                ignore_ssl = True
+
             global authed
             if args.login:
                 authenticate(args.url, args.login, None)
@@ -743,11 +747,6 @@ if __name__ == "__main__":
                 print 'Verbosity is set to HIGH. Spartan will print all resources found.'
             else:
                 print 'Verbosity is set to LOW. SPartan will only print available resources. Use the -v flag to print all other resources found.'
-
-            global ignore_ssl
-            ignore_ssl = False
-            if args.ignore_ssl:
-                ignore_ssl = True
 
             url = args.url.strip('/')
             fileName = fileNamer(url)
