@@ -22,7 +22,14 @@ Author: Special K
 Version: 1.0 (20-11-2014)
 
 """
-import argparse,requests,sys,os,threading,bs4,warnings,random
+import argparse
+import requests
+import sys
+import os
+import threading
+import bs4
+import warnings
+import random
 from threading import Lock
 from requests_ntlm import HttpNtlmAuth
 
@@ -703,6 +710,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--ignore-ssl-verification', dest='ignore_ssl', action='store_false', help="Don't attempt to verify SSL certificates as valid before making a request. This is defaulted to false.")
     args = parser.parse_args()
 
+    global authed
     authed = False
     try:
         if args.url:
@@ -730,7 +738,6 @@ if __name__ == "__main__":
             else:
                 cookie = None
 
-            global authed
             if args.login:
                 authenticate(args.url, args.login, None)
             else:
