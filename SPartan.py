@@ -76,9 +76,9 @@ def getUsers(url):
             accountElement = inputTag.get('account')
             if accountElement is not None:
                 if 'i:0#.f|' in accountElement or 'i:0#.w|' in accountElement:
-                    print accountElement.rsplit('|', 1)[1]
+                    print(accountElement.rsplit('|', 1)[1])
                 else:
-                    print accountElement
+                    print(accountElement)
 
 def writeUserToFile(accName):
     fname = fileNamer(url)
@@ -115,7 +115,7 @@ def frontpage_fingerprint(url):
         thread.join()
         resp = thread.resp
         if resp is not None and len(resp.text) > 0:
-            print "\n[+] Frontpage for Linux found"
+            print("\n[+] Frontpage for Linux found")
             break
 
     #Check Windows
@@ -125,7 +125,7 @@ def frontpage_fingerprint(url):
         thread.join()
         resp = thread.resp
         if resp is not None and len(resp.text) > 0:
-            print "\n[+] Frontpage for Windows found"
+            print("\n[+] Frontpage for Windows found")
             break
 
     thread = URLThread(url + '/_vti_inf.html')
@@ -133,7 +133,7 @@ def frontpage_fingerprint(url):
     thread.join()
     resp = thread.resp
     if resp is not None and len(resp.text) > 0:
-        print"[+] Frontpage config: " + resp.text
+        print("[+] Frontpage config: " + resp.text)
 
 
 def frontpage_bin(url):
@@ -177,7 +177,7 @@ def frontpage_rpc(url):
             thread.sendData(url + '/' + path, data)
             resp = thread.resp
             if resp is not None and resp.status_code == 200:
-                print resp.text
+                print(resp.text)
 
 
 def query_rpc(url, query):
@@ -194,9 +194,9 @@ def query_rpc(url, query):
     try:
         resp = URLThread(url + '/' + path.strip("/"))
         if resp.status_code == 200:
-            print resp.text
-    except requests.HTTPError, e:
-        print e
+            print(resp.text)
+    except requests.HTTPError as e:
+        print(e)
 
 
 def frontpage_fileup(url):
@@ -223,13 +223,13 @@ def sharepoint_fingerprint(url):
         thread.join()
         resp = thread.resp
         if 'microsoftsharepointteamservices' in resp.headers:
-            print "[+] Sharepoint version: " + resp.headers['microsoftsharepointteamservices']
+            print("[+] Sharepoint version: " + resp.headers['microsoftsharepointteamservices'])
         if 'x-aspnet-version' in resp.headers:
-            print "[+] X-Aspnet version: " + resp.headers['x-aspnet-version']
+            print("[+] X-Aspnet version: " + resp.headers['x-aspnet-version'])
         if 'x-sharepointhealthscore' in resp.headers:
-            print "[+] Sharepoint health score: " + resp.headers['x-sharepointhealthscore']
-    except requests.HTTPError, e:
-        print e
+            print("[+] Sharepoint health score: " + resp.headers['x-sharepointhealthscore'])
+    except requests.HTTPError as e:
+        print(e)
 
 
 def sharepoint_layouts(url):
@@ -309,8 +309,8 @@ def getVerbs(u):
 
         return verbs
 
-    except requests.HTTPError, e:
-        print e
+    except requests.HTTPError as e:
+        print(e)
 
 
 def findPuttable():
@@ -336,8 +336,8 @@ def findPuttable():
                 if 'allow' in resp.headers:
                     printer('[+] PUT - %s' % (path), GREEN)
 
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
 
 
 def authenticate(url, userpass, cString):
@@ -352,13 +352,13 @@ def authenticate(url, userpass, cString):
             #use credentials
             username = userpass.split(':')[0]
             password = userpass.split(':')[1]
-            print '[+] Authenticating: %s %s' % (url, username)
+            print('[+] Authenticating: %s %s' % (url, username))
             response = requests.get(url, auth=HttpNtlmAuth(username, password), verify=ignore_ssl,headers=headers)
             if response.status_code == 200:
-                print '[+] Authenticated...Have fun!: %s' % (response.status_code)
+                print('[+] Authenticated...Have fun!: %s' % (response.status_code))
                 authed = True
             else:
-                print '[-] Failed! Have the gods no mercy?: %s' % (response.status_code)
+                print('[-] Failed! Have the gods no mercy?: %s' % (response.status_code))
                 sys.exit(0)
 
         if cString is not None:
@@ -368,17 +368,17 @@ def authenticate(url, userpass, cString):
             for c in cookieList:
                 params = c.partition('=')
                 cookie.update({params[0]:params[2]})
-            print '[+] Authenticating: %s' % (url)
+            print('[+] Authenticating: %s' % (url))
             response = requests.get(url, cookies=cookie, verify=ignore_ssl,headers=headers)
             if response.status_code == 200:
-                print '[+] Authenticated...Have fun!: %s' % (response.status_code)
+                print('[+] Authenticated...Have fun!: %s' % (response.status_code))
                 authed = True
             else:
-                print '[-] Failed! Have the gods no mercy?: %s' % (response.status_code)
+                print('[-] Failed! Have the gods no mercy?: %s' % (response.status_code))
                 sys.exit(0)
 
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
 
 
 #Entrail Crawler
@@ -418,10 +418,10 @@ def crawler(url):
                                 thread.join()
                                 if thread.resp.status_code == 200:
                                     queue.append(baseURL + '/' + hLink.strip('/'))
-    except KeyboardInterrupt, e:
+    except KeyboardInterrupt as e:
         return
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
 
 #Keyword scanner
 def keywordScanner(keyword):
@@ -431,8 +431,8 @@ def keywordScanner(keyword):
                 resp = requests.get(url, verify=ignore_ssl,headers=headers)
                 if keyword in resp.text or keyword in url:
                     printer('[+] Found keyword %s in %s' % (keyword, url), GREEN)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
 
 def fileNamer(url):
     fileName = url.strip('https://').strip('http://').strip('/')
@@ -458,7 +458,7 @@ def restoreState(fileName):
     for url in urls:
         foundURLs.append(stringCleaner(url))
     f.close()
-    print '[+] %s URLs restored for this session' % (len(foundURLs))
+    print('[+] %s URLs restored for this session' % (len(foundURLs)))
 
     for url in foundURLs:
         printer('[+] ' + url, GREEN)
@@ -530,7 +530,7 @@ class URLThread(threading.Thread):
 
                 fakeRespSize = len(fakeResp.text)
 
-            except requests.HTTPError, e:
+            except requests.HTTPError as e:
                 #If it's catching these then Friendly 404s are not being used and it's just fucking out
                 pass
 
@@ -578,8 +578,8 @@ class URLThread(threading.Thread):
                 counter = counter + 1
 
 
-        except requests.HTTPError, e:
-            print e
+        except requests.HTTPError as e:
+            print(e)
 
     def sendData(self, url, data, headers):
         global counter
@@ -615,8 +615,8 @@ class URLThread(threading.Thread):
                     self.printer(out, PURPLE)
                 counter = counter + 1
 
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
 
     def fileDownloader(self, url):
         #Download files to folder
@@ -677,7 +677,7 @@ def banner():
        ░               ░  ░  ░                  ░  ░        ░
                Sharepoint & Frontpage Scanner
 """
-    print red.format(banner)
+    print(red.format(banner))
 
 
 if __name__ == "__main__":
@@ -697,13 +697,12 @@ if __name__ == "__main__":
     parser.add_argument('-p', dest='putable', action='store_true', help="(COMING SOON)find putable directories")
     parser.add_argument('--cookie', dest='cookie', action='store', help="use a cookie for authenticated scans")
     parser.add_argument('-d', dest='download', action='store_true', help="download pdf, doc, docx, txt, config, xml, xls, xlsx, webpart, config, conf, stp, csv and asp/aspx(uninterpreted)")
-    parser.add_argument('-l', dest='login', action='store', help="provide credentials for authentication to Sharepoint",
-                        metavar=('domain\user:password'))
+    parser.add_argument('-l', dest='login', action='store', help="provide credentials for authentication to Sharepoint", metavar=(r'domain\user:password'))
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Render verbose output. By default SPartan will only render found resources.")
     parser.add_argument('-i', '--ignore-ssl-verification', dest='ignore_ssl', action='store_false', help="Don't attempt to verify SSL certificates as valid before making a request. This is defaulted to false.")
     args = parser.parse_args()
-
-    authed = False
+    
+    
     try:
         if args.url:
             choice = 'n'
@@ -731,6 +730,8 @@ if __name__ == "__main__":
                 cookie = None
 
             global authed
+            authed = False
+            
             if args.login:
                 authenticate(args.url, args.login, None)
             else:
@@ -740,9 +741,9 @@ if __name__ == "__main__":
             verbose = False
             if args.verbose:
                 verbose = True
-                print 'Verbosity is set to HIGH. Spartan will print all resources found.'
+                print('Verbosity is set to HIGH. Spartan will print all resources found.')
             else:
-                print 'Verbosity is set to LOW. SPartan will only print available resources. Use the -v flag to print all other resources found.'
+                print('Verbosity is set to LOW. SPartan will only print available resources. Use the -v flag to print all other resources found.')
 
             global ignore_ssl
             ignore_ssl = False
@@ -756,14 +757,14 @@ if __name__ == "__main__":
                 os.makedirs(fileName)
 
             if checkFileExists(fileName):
-                print "A file named %s already exists. Do you want to restore this session? [y/n]" % fileName
+                print("A file named %s already exists. Do you want to restore this session? [y/n]" % fileName)
                 choice = raw_input().lower()
                 if choice != 'y' and choice != 'n':
                     printer('Bad choice!', RED)
                     sys.exit(0)
                 if choice == 'y':
-                    print "\n-----------------------------------------------------------------------------"
-                    print "[+] Loading..."
+                    print ("\n-----------------------------------------------------------------------------")
+                    print("[+] Loading...")
                     restoreState(fileName)
             if choice == 'n' or not checkFileExists(fileName):
                 #Inject the base URL
@@ -772,57 +773,57 @@ if __name__ == "__main__":
                 thread.join()
 
                 if args.frontpage:
-                    print "\n-----------------------------------------------------------------------------"
-                    print "[+] Initiating Frontpage fingerprinting..."
+                    print ("\n-----------------------------------------------------------------------------")
+                    print("[+] Initiating Frontpage fingerprinting...")
                     frontpage_fingerprint(url)
-                    print "\n-----------------------------------------------------------------------------"
-                    print "[+] Initiating Frontpage pvt scan..."
+                    print( "\n-----------------------------------------------------------------------------")
+                    print ("[+] Initiating Frontpage pvt scan...")
                     frontpage_pvt(url)
-                    print "\n-----------------------------------------------------------------------------"
-                    print "[+] Initiating Frontpage bin scan..."
+                    print( "\n-----------------------------------------------------------------------------")
+                    print ("[+] Initiating Frontpage bin scan...")
                     frontpage_bin(url)
-                    print "\n-----------------------------------------------------------------------------"
-                    print "[+] Initiating Frontpage service scan..."
+                    print( "\n-----------------------------------------------------------------------------")
+                    print("[+] Initiating Frontpage service scan...")
                     frontpage_services(url)
-                    print "\n-----------------------------------------------------------------------------"
+                    print( "\n-----------------------------------------------------------------------------")
                     # print "[+] Initiating Frontpage RPC scan..."
                 if args.sharepoint:
-                    print "\n-----------------------------------------------------------------------------"
-                    print "[+] Initiating Sharepoint fingerprinting..."
+                    print( "\n-----------------------------------------------------------------------------")
+                    print ("[+] Initiating Sharepoint fingerprinting...")
                     sharepoint_fingerprint(url)
-                    print "\n-----------------------------------------------------------------------------"
-                    print "[+] Initiating Sharepoint layouts scan..."
+                    print( "\n-----------------------------------------------------------------------------")
+                    print("[+] Initiating Sharepoint layouts scan...")
                     sharepoint_layouts(url)
-                    print "\n-----------------------------------------------------------------------------"
-                    print "[+] Initiating Sharepoint forms scan..."
+                    print( "\n-----------------------------------------------------------------------------")
+                    print("[+] Initiating Sharepoint forms scan...")
                     sharepoint_forms(url)
-                    print "\n-----------------------------------------------------------------------------"
-                    print "[+] Initiating Sharepoint catalogs scan..."
+                    print( "\n-----------------------------------------------------------------------------")
+                    print ("[+] Initiating Sharepoint catalogs scan...")
                     sharepoint_catalogs(url)
                 if args.sps:
-                    print "\n-----------------------------------------------------------------------------"
-                    print "[+] Searching for SOAP services..."
+                    print( "\n-----------------------------------------------------------------------------")
+                    print("[+] Searching for SOAP services...")
                     soap_services(url)
                 if args.users:
-                    print "\n-----------------------------------------------------------------------------"
-                    print "[+] Listing user information..."
+                    print ("\n-----------------------------------------------------------------------------")
+                    print("[+] Listing user information...")
                     getUsers(url)
             if args.crawl:
                 crawler(url)
             if args.keyword:
-                print "\n-----------------------------------------------------------------------------"
-                print "[+] Initiating keyword scan..."
+                print ("\n-----------------------------------------------------------------------------")
+                print("[+] Initiating keyword scan...")
                 keywordScanner(stringCleaner(args.keyword))
             # if args.rpc:
             #     print "\n-----------------------------------------------------------------------------"
             #     print "[+] Executing Frontpage RPC query..."
             #     query_rpc(url, args.rpc)
             if args.putable:
-                print "\n-----------------------------------------------------------------------------"
-                print "[+] Searching for PUTable directories..."
+                print ("\n-----------------------------------------------------------------------------")
+                print("[+] Searching for PUTable directories...")
                 findPuttable()
-            print "\n-----------------------------------------------------------------------------"
-            print "[+] Saving state: " + fileName
+            print ("\n-----------------------------------------------------------------------------")
+            print("[+] Saving state: " + fileName)
             saveState(fileName)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
